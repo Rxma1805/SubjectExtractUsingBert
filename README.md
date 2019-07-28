@@ -127,24 +127,24 @@ train.tsv
 定义数据读取类  
 run_classifier.py 声明了 DataProcessor 基类作为任务的数据处理基类，并实现了 XNLI、MultiNLI、MRPC、CoLA 这几个任务数据集的读取方式作为样例。该类很简单，仅需子类实现实现父类定义的如下四个方法：  
     
-class DataProcessor(object):
-  """Base class for data converters for sequence classification data sets."""
+    class DataProcessor(object):
+      """Base class for data converters for sequence classification data sets."""
 
-  def get_train_examples(self, data_dir):
-    """Gets a collection of `InputExample`s for the train set."""
-    raise NotImplementedError()
+      def get_train_examples(self, data_dir):
+        """Gets a collection of `InputExample`s for the train set."""
+        raise NotImplementedError()
 
-  def get_dev_examples(self, data_dir):
-    """Gets a collection of `InputExample`s for the dev set."""
-    raise NotImplementedError()
+      def get_dev_examples(self, data_dir):
+        """Gets a collection of `InputExample`s for the dev set."""
+        raise NotImplementedError()
 
-  def get_test_examples(self, data_dir):
-    """Gets a collection of `InputExample`s for prediction."""
-    raise NotImplementedError()
+      def get_test_examples(self, data_dir):
+        """Gets a collection of `InputExample`s for prediction."""
+        raise NotImplementedError()
 
-  def get_labels(self):
-    """Gets the list of labels for this data set."""
-    raise NotImplementedError()
+      def get_labels(self):
+        """Gets the list of labels for this data set."""
+        raise NotImplementedError()
     
 参考写好的几个子类实现，我们首先继承 DataProcessor ，定义我们的领域分类任务的数据处理类 DomainCProcessor：
 
@@ -154,25 +154,25 @@ class DomainCProcessor(DataProcessor):
 实现 get_train_examples、get_dev_examples、get_test_examples
 这三个函数，分别对应训练、开发、测试的数据集的读取，输入参数 data_dir 由脚本启动时的 data_dir 参数获得，这三个函数需要把数据集每一行数据读为一个 InputExample，所有行构成 list[InputExample]。InputExample 声明如下
 
-class InputExample(object):
-  """A single training/test example for simple sequence classification."""
+    class InputExample(object):
+      """A single training/test example for simple sequence classification."""
 
-  def __init__(self, guid, text_a, text_b=None, label=None):
-    """Constructs a InputExample.
+      def __init__(self, guid, text_a, text_b=None, label=None):
+        """Constructs a InputExample.
 
-    Args:
-      guid: Unique id for the example.
-      text_a: string. The untokenized text of the first sequence. For single
-        sequence tasks, only this sequence must be specified.
-      text_b: (Optional) string. The untokenized text of the second sequence.
-        Only must be specified for sequence pair tasks.
-      label: (Optional) string. The label of the example. This should be
-        specified for train and dev examples, but not for test examples.
-    """
-    self.guid = guid
-    self.text_a = text_a
-    self.text_b = text_b
-    self.label = label
+        Args:
+          guid: Unique id for the example.
+          text_a: string. The untokenized text of the first sequence. For single
+            sequence tasks, only this sequence must be specified.
+          text_b: (Optional) string. The untokenized text of the second sequence.
+            Only must be specified for sequence pair tasks.
+          label: (Optional) string. The label of the example. This should be
+            specified for train and dev examples, but not for test examples.
+        """
+        self.guid = guid
+        self.text_a = text_a
+        self.text_b = text_b
+        self.label = label
 InputExample 仅由唯一id、句子a、句子b、类标，这四个属性构成，对于单句任务，句子 b 置 None。
 
 所以我们要保证这三个函数 return 值是下面这样的形式即可：
@@ -184,65 +184,65 @@ return [
 ]
 一个完整的实现如下：
 
-class DomainCProcessor(DataProcessor):
-  def get_train_examples(self, data_dir):
-        return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "train.tsv")), "train")
+    class DomainCProcessor(DataProcessor):
+      def get_train_examples(self, data_dir):
+            return self._create_examples(
+                self._read_tsv(os.path.join(data_dir, "train.tsv")), "train")
 
-    def get_dev_examples(self, data_dir):
-        return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "dev.tsv")), "dev")
+        def get_dev_examples(self, data_dir):
+            return self._create_examples(
+                self._read_tsv(os.path.join(data_dir, "dev.tsv")), "dev")
 
-    def get_test_examples(self, data_dir):
-        return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "test.tsv")), "test")
+        def get_test_examples(self, data_dir):
+            return self._create_examples(
+                self._read_tsv(os.path.join(data_dir, "test.tsv")), "test")
 
-    @classmethod
-    def _read_tsv(cls, input_file, quotechar=None):
-        """读取 tsv 的工具方法"""
-        with tf.gfile.Open(input_file, "r") as f:
-        reader = csv.reader(f, delimiter="\t", quotechar=quotechar)
-        lines = []
-        for line in reader:
-            lines.append(line)
-        return lines
+        @classmethod
+        def _read_tsv(cls, input_file, quotechar=None):
+            """读取 tsv 的工具方法"""
+            with tf.gfile.Open(input_file, "r") as f:
+            reader = csv.reader(f, delimiter="\t", quotechar=quotechar)
+            lines = []
+            for line in reader:
+                lines.append(line)
+            return lines
 
-    def _create_examples(self, lines, set_type):
-        """创建 InputExample 对象的工具方法"""
-        examples = []
-        for (i, line) in enumerate(lines):
-            if i == 0:
-                continue
-            guid = "%s-%s" % (set_type, i)
-            text_a = tokenization.convert_to_unicode(line[1])
-            if set_type == "test": # 对于测试集，去除真实标记
-                label = "上网服务管理"
-            else:
-                label = tokenization.convert_to_unicode(line[0])
-            examples.append(
-                InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
-        return examples
+        def _create_examples(self, lines, set_type):
+            """创建 InputExample 对象的工具方法"""
+            examples = []
+            for (i, line) in enumerate(lines):
+                if i == 0:
+                    continue
+                guid = "%s-%s" % (set_type, i)
+                text_a = tokenization.convert_to_unicode(line[1])
+                if set_type == "test": # 对于测试集，去除真实标记
+                    label = "上网服务管理"
+                else:
+                    label = tokenization.convert_to_unicode(line[0])
+                examples.append(
+                    InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+            return examples
 
-    def get_labels(self):
-        return ["上网服务管理", "出入境管理", "刑事案件管辖", "户政管理", "治安管理", "消防管理", "禁毒管理", "道路交通"]
+        def get_labels(self):
+            return ["上网服务管理", "出入境管理", "刑事案件管辖", "户政管理", "治安管理", "消防管理", "禁毒管理", "道路交通"]
 训练
 一旦定义好数据读取类，就可以训练模型了。启动命令如下：
 
-BERT_BASE_DIR=/bert/chinese_L-12_H-768_A-12 
-python run_classifier.py \
-  --task_name=DomainC \
-  --do_train=true \
-  --do_eval=true \
-  --do_predict=false \
-  --data_dir='/bert/data/domainc' \
-  --vocab_file=$BERT_BASE_DIR/vocab.txt \
-  --bert_config_file=$BERT_BASE_DIR/bert_config.json \
-  --init_checkpoint=$BERT_BASE_DIR/bert_model.ckpt \
-  --max_seq_length=128 \
-  --train_batch_size=32 \
-  --learning_rate=2e-5 \
-  --num_train_epochs=3.0 \
-  --output_dir=/tmp/domainc_output/
+    BERT_BASE_DIR=/bert/chinese_L-12_H-768_A-12 
+    python run_classifier.py \
+      --task_name=DomainC \
+      --do_train=true \
+      --do_eval=true \
+      --do_predict=false \
+      --data_dir='/bert/data/domainc' \
+      --vocab_file=$BERT_BASE_DIR/vocab.txt \
+      --bert_config_file=$BERT_BASE_DIR/bert_config.json \
+      --init_checkpoint=$BERT_BASE_DIR/bert_model.ckpt \
+      --max_seq_length=128 \
+      --train_batch_size=32 \
+      --learning_rate=2e-5 \
+      --num_train_epochs=3.0 \
+      --output_dir=/tmp/domainc_output/
 参数中 do_train、do_eval 都是 true，因此会在 train.tsv 上训练，dev.tsv 上评估模型效果。至于 predict，我们下一节介绍。
 
 其中的超参，官方表示如下设定在所有任务上都表现很好：
@@ -269,18 +269,18 @@ run_classifier.py 的 859 行加载了模型为 estimator 变量，但是遗憾�
 
 代码如下（参考了 https://github.com/bigboNed3/bert_serving）：
 
-def serving_input_fn():
-    label_ids = tf.placeholder(tf.int32, [None], name='label_ids')
-    input_ids = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name='input_ids')
-    input_mask = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name='input_mask')
-    segment_ids = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name='segment_ids')
-    input_fn = tf.estimator.export.build_raw_serving_input_receiver_fn({
-        'label_ids': label_ids,
-        'input_ids': input_ids,
-        'input_mask': input_mask,
-        'segment_ids': segment_ids,
-    })()
-    return input_fn
+    def serving_input_fn():
+        label_ids = tf.placeholder(tf.int32, [None], name='label_ids')
+        input_ids = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name='input_ids')
+        input_mask = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name='input_mask')
+        segment_ids = tf.placeholder(tf.int32, [None, FLAGS.max_seq_length], name='segment_ids')
+        input_fn = tf.estimator.export.build_raw_serving_input_receiver_fn({
+            'label_ids': label_ids,
+            'input_ids': input_ids,
+            'input_mask': input_mask,
+            'segment_ids': segment_ids,
+        })()
+        return input_fn
 
 estimator._export_to_tpu = False
 estimator.export_savedmodel('/bert/my_model', serving_input_fn)
@@ -296,21 +296,21 @@ predict_fn = tf.contrib.predictor.from_saved_model('/bert/my_model/1553914434')
 从内存中读取样本数据并预测
 基于上面的 predict_fn 变量，就可以直接进行预测了。下面是一个从标准输入流读取问题样本，并预测分类的样例代码：
 
-while True:
-    question = input("> ")
-    predict_example = InputExample("id", question, None, '某固定伪标记')
-    feature = convert_single_example(100, predict_example, label_list,
-                                        FLAGS.max_seq_length, tokenizer)
+    while True:
+        question = input("> ")
+        predict_example = InputExample("id", question, None, '某固定伪标记')
+        feature = convert_single_example(100, predict_example, label_list,
+                                            FLAGS.max_seq_length, tokenizer)
 
-    prediction = predict_fn({
-        "input_ids":[feature.input_ids],
-        "input_mask":[feature.input_mask],
-        "segment_ids":[feature.segment_ids],
-        "label_ids":[feature.label_id],
-    })
-    probabilities = prediction["probabilities"]
-    label = label_list[probabilities.argmax()]
-    print(label)
+        prediction = predict_fn({
+            "input_ids":[feature.input_ids],
+            "input_mask":[feature.input_mask],
+            "segment_ids":[feature.segment_ids],
+            "label_ids":[feature.label_id],
+        })
+        probabilities = prediction["probabilities"]
+        label = label_list[probabilities.argmax()]
+        print(label)
 完整代码可以参见 https://gitlab.aegis-info.com/padeoe/bert/blob/dev/run_classifier.py。
 
 基于 bert-as-service 项目 feature extract
@@ -326,42 +326,42 @@ bert-as-service 是一个第三方项目，Github 地址: hanxiao/bert-as-servic
 
 安装并启动 bert-as-service。启动参数包括模型路径 PATH_MODEL、进程数 NUM_WORKER。安装方式有 pip 或 docker：
 
-pip （CPU/GPU）
+    pip （CPU/GPU）
 
-PATH_MODEL=/tmp/chinese_L-12_H-768_A-12
-NUM_WORKER=4
-pip install bert-serving-server
-bert-serving-start -model_dir $PATH_MODEL -num_worker=$NUM_WORKER
-docker 
-GPU
+    PATH_MODEL=/tmp/chinese_L-12_H-768_A-12
+    NUM_WORKER=4
+    pip install bert-serving-server
+    bert-serving-start -model_dir $PATH_MODEL -num_worker=$NUM_WORKER
+    docker 
+    GPU
 
-git clone https://github.com/hanxiao/bert-as-service.git
-cd bert-as-service
-docker build -t bert-as-service -f docker/Dockerfile .
-PATH_MODEL=/tmp/chinese_L-12_H-768_A-12
-NUM_WORKER=4
-docker run --runtime nvidia --name bert-as-service  -dit -p 5555:5555 -p 5556:5556 -v $PATH_MODEL:/model -t bert-as-service $NUM_WORKER
-CPU
+    git clone https://github.com/hanxiao/bert-as-service.git
+    cd bert-as-service
+    docker build -t bert-as-service -f docker/Dockerfile .
+    PATH_MODEL=/tmp/chinese_L-12_H-768_A-12
+    NUM_WORKER=4
+    docker run --runtime nvidia --name bert-as-service  -dit -p 5555:5555 -p 5556:5556 -v $PATH_MODEL:/model -t bert-as-service $NUM_WORKER
+    CPU
 
-git clone https://github.com/hanxiao/bert-as-service.git
-cd bert-as-service
-sed -i 's/tensorflow:1.12.0-gpu-py3/tensorflow:1.12.0-py3/g' docker/Dockerfile
-docker build -t bert-as-service -f docker/Dockerfile .
-PATH_MODEL=/tmp/chinese_L-12_H-768_A-12
-NUM_WORKER=4
-docker run --name bert-as-service -dit -p 5555:5555 -p 5556:5556 -v $PATH_MODEL:/model -t bert-as-service $NUM_WORKER
+    git clone https://github.com/hanxiao/bert-as-service.git
+    cd bert-as-service
+    sed -i 's/tensorflow:1.12.0-gpu-py3/tensorflow:1.12.0-py3/g' docker/Dockerfile
+    docker build -t bert-as-service -f docker/Dockerfile .
+    PATH_MODEL=/tmp/chinese_L-12_H-768_A-12
+    NUM_WORKER=4
+    docker run --name bert-as-service -dit -p 5555:5555 -p 5556:5556 -v $PATH_MODEL:/model -t bert-as-service $NUM_WORKER
 客户端调用
 安装客户端库。
 
 pip install bert-serving-client
 安装完就可以在代码中调用了：
 
->>> from bert_serving.client import BertClient
->>> bc = BertClient(ip='192.168.11.42')
->>> bc.encode(['合同诈骗罪是怎样处罚的？', '孩子办户口的时间限制'])
-array([[ 0.56223714, -0.28043476,  0.15880957, ..., -0.5312789 ,
-        -0.05316753,  0.5204646 ],
-       [ 0.3173091 , -0.39072016,  0.08520816, ..., -0.21686065,
-        -0.25086305, -0.08226559]], dtype=float32)
+    >>> from bert_serving.client import BertClient
+    >>> bc = BertClient(ip='192.168.11.42')
+    >>> bc.encode(['合同诈骗罪是怎样处罚的？', '孩子办户口的时间限制'])
+    array([[ 0.56223714, -0.28043476,  0.15880957, ..., -0.5312789 ,
+            -0.05316753,  0.5204646 ],
+           [ 0.3173091 , -0.39072016,  0.08520816, ..., -0.21686065,
+            -0.25086305, -0.08226559]], dtype=float32)
 >>>
 如上，encode 函数接受句子 list，无论句子有多少，服务端会自动处理 batch。获得了句子的编码之后，就可以输入自己的模型做后续运算了。
