@@ -1,5 +1,5 @@
 # SubjectExtractUsingBert  
-# Bert 讲解 [来源](https://work.padeoe.com/notes/bert.html)
+# Bert 讲解 [转载来源](https://work.padeoe.com/notes/bert.html)
 Bert 模型的使用
 Bert 是 Google 在 2018 年 10 月提出的一种新的语言模型，全称为 Bidirectional Encoder Representations from Transformers（Bert）。和近年来的一些语言模型譬如 ELMo 不同，BERT 通过在所有层联合调节左右两个上下文来预训练深层双向表示，此外还通过组装长句作为输入增强了对长程语义的理解。Bert 可以被微调以广泛用于各类任务，仅需额外添加一个输出层，无需进行针对任务的模型结构调整，就在文本分类，语义理解等一些任务上取得了 state-of-the-art 的成绩。
 
@@ -30,7 +30,7 @@ Label = NotNext
 
 fine tune
 所以，如果我们要来 fine-tune 做任务，也是这个思路：首先对原有模型做适当构造，一般仅需加一输出层完成任务。Bert 的论文对于若干种常见任务做了模型构造的示例，如下： 
-[image](https://work.padeoe.com/res/images/task_specific_models.png)
+![image](https://work.padeoe.com/res/images/task_specific_models.png)
 
 
 
