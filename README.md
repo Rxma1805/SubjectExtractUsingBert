@@ -126,7 +126,7 @@ train.tsv
 
 定义数据读取类  
 run_classifier.py 声明了 DataProcessor 基类作为任务的数据处理基类，并实现了 XNLI、MultiNLI、MRPC、CoLA 这几个任务数据集的读取方式作为样例。该类很简单，仅需子类实现实现父类定义的如下四个方法：  
-
+    
 class DataProcessor(object):
   """Base class for data converters for sequence classification data sets."""
 
@@ -145,6 +145,7 @@ class DataProcessor(object):
   def get_labels(self):
     """Gets the list of labels for this data set."""
     raise NotImplementedError()
+    
 参考写好的几个子类实现，我们首先继承 DataProcessor ，定义我们的领域分类任务的数据处理类 DomainCProcessor：
 
 class DomainCProcessor(DataProcessor):
